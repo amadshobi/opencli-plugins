@@ -1,0 +1,6 @@
+{
+  "name": "gemini",
+  "version": "0.1.0",
+  "description": "OpenCLI plugin for Gemini App (gemini.google.com): video generation",
+  "opencli": ">=2.0.3"
+}

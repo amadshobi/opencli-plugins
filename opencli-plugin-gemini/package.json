@@ -1,0 +1,15 @@
+{
+  "name": "opencli-plugin-gemini",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenCLI plugin for Gemini App (gemini.google.com): video generation",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@jackwener/opencli": ">=2.0.3"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}
