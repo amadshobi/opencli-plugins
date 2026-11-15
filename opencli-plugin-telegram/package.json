@@ -1,0 +1,9 @@
+{
+  "name": "opencli-plugin-telegram",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenCLI plugin for Telegram Web",
+  "peerDependencies": {
+    "@jackwener/opencli": ">=2.0.3"
+  }
+}

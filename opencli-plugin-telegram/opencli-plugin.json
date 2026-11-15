@@ -1,0 +1,6 @@
+{
+  "name": "telegram",
+  "version": "0.1.0",
+  "description": "OpenCLI plugin for Telegram Web",
+  "opencli": ">=2.0.3"
+}

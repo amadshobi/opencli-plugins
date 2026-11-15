@@ -1,0 +1,6 @@
+{
+  "name": "aistudio",
+  "version": "0.1.0",
+  "description": "OpenCLI plugin for Google AI Studio (aistudio.google.com)",
+  "opencli": ">=2.0.3"
+}

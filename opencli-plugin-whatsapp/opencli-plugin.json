@@ -1,0 +1,6 @@
+{
+  "name": "whatsapp",
+  "version": "0.1.0",
+  "description": "OpenCLI plugin for WhatsApp Web",
+  "opencli": ">=2.0.3"
+}

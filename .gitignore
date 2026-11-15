@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+*/node_modules/
+*/*/node_modules/
+package-lock.json
+*/package-lock.json
+
+# Environment & Secrets
+.env
+.env.*
+*.local
+*.pem
+*.key
+
+# Logs & Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary files & Renders
+tmp/
+temp/
+*.tmp
+*.crdownload
+renders/
+output/
