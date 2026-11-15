@@ -9,6 +9,11 @@
 </p>
 
 <p align="center">
+  <a href="./README.md"><b>English (US)</b></a> •
+  <a href="./README.ind.md"><b>Bahasa Indonesia</b></a>
+</p>
+
+<p align="center">
   <a href="#-included-plugins"><img src="https://img.shields.io/badge/plugins-3%20available-0F766E?style=flat-square" alt="Plugins"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://github.com/jackwener/opencli"><img src="https://img.shields.io/badge/opencli-%3E%3D2.0.3-cyan?style=flat-square" alt="OpenCLI"></a>
