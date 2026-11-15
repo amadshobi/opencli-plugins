@@ -2,6 +2,10 @@
 
 A curated collection of production-grade plugins for **[OpenCLI](https://github.com/jackwener/opencli)** to automate web applications directly from your terminal by driving authenticated browser sessions.
 
+<p align="center">
+  <img src="./docs/assets/demo.gif" alt="OpenCLI AI Studio Demo" width="100%" />
+</p>
+
 ---
 
 ## 📦 Included Plugins
