@@ -127,5 +127,5 @@ opencli telegram status
 To link or reinstall this plugin into your local OpenCLI environment:
 
 ```sh
-opencli plugin install "C:\Users\AHMAD SHOBI ULINNAFI\opencli-plugin-telegram"
+opencli plugin install ./opencli-plugin-telegram
 ```

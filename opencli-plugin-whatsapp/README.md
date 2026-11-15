@@ -101,5 +101,5 @@ opencli telegram save "./foto.jpg" --caption "Backup Foto dari WA"
 To link or reinstall this plugin into your local OpenCLI environment:
 
 ```sh
-opencli plugin install "C:\Users\AHMAD SHOBI ULINNAFI\Projects\opencli-plugin\opencli-plugin-whatsapp"
+opencli plugin install ./opencli-plugin-whatsapp
 ```
