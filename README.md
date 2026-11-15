@@ -1,6 +1,18 @@
-# 🚀 OpenCLI Plugins Collection
+<p align="center">
+  <img src="./docs/assets/logo.png" alt="OpenCLI Logo" width="100" />
+</p>
 
-A curated collection of production-grade plugins for **[OpenCLI](https://github.com/jackwener/opencli)** to automate web applications directly from your terminal by driving authenticated browser sessions.
+<h1 align="center">OpenCLI Plugins Collection</h1>
+
+<p align="center">
+  A curated collection of production-grade plugins for <b><a href="https://github.com/jackwener/opencli">OpenCLI</a></b> to automate web applications directly from your terminal by driving authenticated browser sessions.
+</p>
+
+<p align="center">
+  <a href="#-included-plugins"><img src="https://img.shields.io/badge/plugins-3%20available-0F766E?style=flat-square" alt="Plugins"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
+  <a href="https://github.com/jackwener/opencli"><img src="https://img.shields.io/badge/opencli-%3E%3D2.0.3-cyan?style=flat-square" alt="OpenCLI"></a>
+</p>
 
 <p align="center">
   <img src="./docs/assets/demo.gif" alt="OpenCLI AI Studio Demo" width="100%" />

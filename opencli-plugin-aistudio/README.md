@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../docs/assets/logo.png" alt="OpenCLI Logo" width="80" />
+</p>
+
 # opencli-plugin-aistudio
 
 OpenCLI plugin for **Google AI Studio** (`aistudio.google.com`).
