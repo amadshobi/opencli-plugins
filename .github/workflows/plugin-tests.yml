@@ -31,10 +31,12 @@ jobs:
         with:
           node-version: 20
 
-      # The repo intentionally does not commit package-lock.json,
-      # so `npm ci` is not available here.
+      # The repo intentionally does not commit package-lock.json, so `npm ci`
+      # is not available. --legacy-peer-deps sidesteps an npm arborist crash
+      # ("Cannot read properties of null (reading 'edgesOut')") on the
+      # auto-installed peer; the host package comes from devDependencies.
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Run tests
         run: npm test

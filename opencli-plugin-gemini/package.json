@@ -10,6 +10,7 @@
     "@jackwener/opencli": ">=2.0.3"
   },
   "devDependencies": {
+    "@jackwener/opencli": ">=2.0.3",
     "vitest": "^5.1.0"
   }
 }
