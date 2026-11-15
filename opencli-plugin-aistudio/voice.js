@@ -2,8 +2,34 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { cli, Strategy } from '@jackwener/opencli/registry';
+import { CommandExecutionError } from '@jackwener/opencli/errors';
+import { findErrorText, isStableCapture, MIN_AUDIO_BYTES, pickNewFile } from './lib.js';
 
-cli({
+/** List downloadable audio artifacts currently sitting in the Downloads folder. */
+function listAudioEntries(downloadsDir) {
+  try {
+    return fs
+      .readdirSync(downloadsDir)
+      // Only finished downloads qualify — a `.crdownload` temp file would
+      // otherwise pass the size-stability check mid-write and get captured.
+      .filter((name) => name.startsWith('Generated Audio') && name.endsWith('.wav'))
+      .map((name) => {
+        const fullPath = path.join(downloadsDir, name);
+        try {
+          const stat = fs.statSync(fullPath);
+          return { name, path: fullPath, mtimeMs: stat.mtimeMs, size: stat.size };
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  } catch {
+    return [];
+  }
+}
+
+export const voiceCommand = cli({
   site: 'aistudio',
   name: 'voice',
   description: 'Generate speech/voice audio using Gemini 3.8 Flash TTS in AI Studio Web without API key',
@@ -33,54 +59,53 @@ cli({
       required: false,
       help: 'Output audio file path (default: ./speech.wav)',
     },
+    {
+      name: 'timeout',
+      type: 'int',
+      default: 90,
+      help: 'Max seconds to wait for audio generation (default: 90)',
+    },
   ],
   func: async (page, kwargs) => {
     const speechText = String(kwargs.text || 'Halo BOSS, ini suara resmi Gemini 3.8 Flash TTS langsung dari terminal!');
     const requestedVoice = kwargs.voice ? String(kwargs.voice).trim() : null;
     const outputPath = path.resolve(String(kwargs.output || './speech.wav'));
     const downloadsDir = path.join(os.homedir(), 'Downloads');
-    const maxTimeoutSec = 90;
-    const commandStartTime = Date.now() - 2000;
+    const maxTimeoutSec = Number(kwargs.timeout || 90);
 
-    // 1. Ensure we are in Dialog editor
+    // 1. Ensure we are in the Dialog editor
     const setupResult = await page.evaluate(`(async () => {
+      /* opencli:setup-editor */
       let ta = document.querySelector('textarea[aria-label="Speech block text"]') || document.querySelector('textarea');
       if (ta) return { ok: true, ready: true };
 
       const card = document.querySelector('mat-card.create-dialog-card')
-                   || Array.from(document.querySelectorAll('mat-card, [role="button"], button')).find(el => (el.innerText || '').includes('Create new dialog'));
+        || Array.from(document.querySelectorAll('mat-card, [role="button"], button')).find((el) => (el.innerText || '').includes('Create new dialog'));
       if (card) {
         card.click();
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 1200));
       }
 
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         ta = document.querySelector('textarea[aria-label="Speech block text"]') || document.querySelector('textarea');
         if (ta && !ta.disabled) return { ok: true, ready: true };
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 400));
       }
 
       return { ok: false, error: 'Could not open speech dialog editor' };
     })()`);
-
     if (!setupResult?.ok) {
-      return [{
-        Model: 'Gemini 3.8 Flash TTS',
-        Voice: requestedVoice || 'Fola',
-        Text: speechText,
-        Output: outputPath,
-        Size: '-',
-        Status: 'Failed: ' + (setupResult?.error || 'Editor setup failed'),
-      }];
+      throw new CommandExecutionError(`Editor setup failed: ${setupResult?.error || 'speech dialog not reachable'}`);
     }
 
-    // 2. Select voice persona if requested
+    // 2. Select the requested voice persona (best effort — verified below)
     if (requestedVoice) {
       await page.evaluate(`(async () => {
-        const speakerBtn = Array.from(document.querySelectorAll('button')).find(el => (el.innerText || '').includes('Speaker 1'));
+        /* opencli:select-voice */
+        const speakerBtn = Array.from(document.querySelectorAll('button')).find((el) => (el.innerText || '').includes('Speaker 1'));
         if (speakerBtn && !(speakerBtn.innerText || '').toLowerCase().includes(${JSON.stringify(requestedVoice.toLowerCase())})) {
           speakerBtn.click();
-          await new Promise(r => setTimeout(r, 800));
+          await new Promise((r) => setTimeout(r, 800));
 
           const overlay = document.querySelector('.cdk-overlay-container');
           if (overlay) {
@@ -89,34 +114,57 @@ cli({
               input.value = ${JSON.stringify(requestedVoice)};
               input.dispatchEvent(new Event('input', { bubbles: true }));
               input.dispatchEvent(new Event('change', { bubbles: true }));
-              await new Promise(r => setTimeout(r, 900));
+              await new Promise((r) => setTimeout(r, 900));
 
-              const targetVoice = Array.from(overlay.querySelectorAll('*')).find(el => 
-                el.childElementCount === 0 && (el.innerText || '').trim().toLowerCase() === ${JSON.stringify(requestedVoice.toLowerCase())}
-              );
+              const targetVoice = Array.from(overlay.querySelectorAll('*')).find((el) =>
+                el.childElementCount === 0 && (el.innerText || '').trim().toLowerCase() === ${JSON.stringify(requestedVoice.toLowerCase())});
               if (targetVoice) {
                 const clickable = targetVoice.closest('button, [role="button"], div[tabindex]') || targetVoice;
                 clickable.click();
-                await new Promise(r => setTimeout(r, 600));
+                await new Promise((r) => setTimeout(r, 600));
               }
             }
 
-            const closeBtn = Array.from(overlay.querySelectorAll('button')).find(b => (b.innerText || '').includes('close'));
+            const closeBtn = Array.from(overlay.querySelectorAll('button')).find((b) => (b.innerText || '').includes('close'));
             if (closeBtn) closeBtn.click();
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise((r) => setTimeout(r, 600));
           }
         }
+        return true;
       })()`);
     }
 
-    // Read active selected voice name
+    // 3. Verify the voice actually applied — a silent persona swap ruins a video
     const activeVoice = await page.evaluate(`(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(el => (el.innerText || '').includes('Speaker 1'));
-      return btn ? btn.innerText.replace('arrow_drop_down', '').replace('Speaker 1 -', '').trim() : 'Fola';
+      /* opencli:read-voice */
+      const btn = Array.from(document.querySelectorAll('button')).find((el) => (el.innerText || '').includes('Speaker 1'));
+      return btn ? btn.innerText.replace('arrow_drop_down', '').replace('Speaker 1 -', '').trim() : 'unknown';
+    })()`);
+    if (requestedVoice && !String(activeVoice).toLowerCase().includes(requestedVoice.toLowerCase())) {
+      throw new CommandExecutionError(
+        `Voice "${requestedVoice}" was not applied (active voice: "${activeVoice}"). ` +
+        'Refusing to synthesize with the wrong persona.',
+      );
+    }
+
+    // 4. Snapshot the Downloads folder BEFORE running (race protection)
+    const snapshot = new Set(listAudioEntries(downloadsDir).map((entry) => entry.name));
+
+    // 4b. Baseline the error containers — stale banners from earlier runs on
+    // this persistent tab must never abort the current synthesis
+    const errorBaseline = await page.evaluate(`(() => {
+      /* opencli:error-baseline */
+      const nodes = document.querySelectorAll(
+        '[role="alert"], .mat-snack-bar-container, snackbar-container, [aria-live="assertive"], .error-message, .error-container'
+      );
+      let text = '';
+      nodes.forEach((n) => { text += '\\n' + (n.innerText || n.textContent || ''); });
+      return text.slice(0, 2000);
     })()`);
 
-    // 3. Set speech text & trigger Run via full mouse event sequence
+    // 5. Set speech text & trigger Run
     const runResult = await page.evaluate(`(async () => {
+      /* opencli:fill-run */
       const ta = document.querySelector('textarea[aria-label="Speech block text"]') || document.querySelector('textarea');
       if (!ta) return { ok: false, error: 'Speech textarea not found' };
 
@@ -124,41 +172,36 @@ cli({
       ta.dispatchEvent(new Event('input', { bubbles: true }));
       ta.dispatchEvent(new Event('change', { bubbles: true }));
 
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 600));
 
       const runBtn = document.querySelector('button.ctrl-enter-submits')
-                     || Array.from(document.querySelectorAll('button')).find(b => (b.innerText || '').startsWith('Run'));
+        || Array.from(document.querySelectorAll('button')).find((b) => (b.innerText || '').startsWith('Run'));
       if (!runBtn) return { ok: false, error: 'Run button not found' };
       if (runBtn.disabled) return { ok: false, error: 'Run button is disabled' };
 
-      // Dispatch full mouse event chain for Angular/Material
       runBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
       runBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
       runBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-
       return { ok: true };
     })()`);
-
     if (!runResult?.ok) {
-      return [{
-        Model: 'Gemini 3.8 Flash TTS',
-        Voice: activeVoice,
-        Text: speechText,
-        Output: outputPath,
-        Size: '-',
-        Status: 'Failed: ' + (runResult?.error || 'Could not click Run'),
-      }];
+      throw new CommandExecutionError(`Could not start synthesis: ${runResult?.error || 'Run not clickable'}`);
     }
 
-    // 4. Poll until speech generation completes (download button becomes available & spinner clears)
+    // 6. Poll until generation completes — with fail-fast error detection
+    await new Promise((r) => setTimeout(r, 3500));
     const startTime = Date.now();
     let generationComplete = false;
 
-    // Small delay for generation to initialize
-    await new Promise(r => setTimeout(r, 3500));
-
-    while ((Date.now() - startTime) < maxTimeoutSec * 1000) {
+    while (Date.now() - startTime < maxTimeoutSec * 1000) {
       const checkStatus = await page.evaluate(`(() => {
+        /* opencli:poll-generation */
+        const nodes = document.querySelectorAll(
+          '[role="alert"], .mat-snack-bar-container, snackbar-container, [aria-live="assertive"], .error-message, .error-container'
+        );
+        let errorText = '';
+        nodes.forEach((n) => { errorText += '\\n' + (n.innerText || n.textContent || ''); });
+
         const isGenerating = Boolean(
           document.querySelector('mat-spinner') ||
           document.querySelector('button[aria-label*="Stop"]') ||
@@ -166,114 +209,119 @@ cli({
         );
 
         const downloadBtn = document.querySelector('button.download-button')
-                            || Array.from(document.querySelectorAll('button')).find(b => {
-                                 const a = (b.getAttribute('aria-label') || '').toLowerCase();
-                                 const t = (b.innerText || '').trim();
-                                 return a.includes('download') || t === 'download';
-                               });
+          || Array.from(document.querySelectorAll('button')).find((b) => {
+            const a = (b.getAttribute('aria-label') || '').toLowerCase();
+            const t = (b.innerText || '').trim();
+            return a.includes('download') || t === 'download';
+          });
 
         return {
+          errorText: errorText.slice(0, 2000),
           isGenerating,
-          hasDownloadBtn: Boolean(downloadBtn && !downloadBtn.disabled)
+          hasDownloadBtn: Boolean(downloadBtn && !downloadBtn.disabled),
         };
       })()`);
+
+      const limitText = findErrorText(checkStatus?.errorText || '');
+      // Only react to error text that is NEW since this run started —
+      // identical text is the stale banner from an earlier attempt.
+      if (limitText && checkStatus.errorText !== errorBaseline) {
+        throw new CommandExecutionError(
+          `Rate limit / quota error reported by AI Studio: "${limitText}". ` +
+          'Rotate to another --profile or wait for the limit to reset.',
+        );
+      }
 
       if (!checkStatus.isGenerating && checkStatus.hasDownloadBtn) {
         generationComplete = true;
         break;
       }
 
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 2000));
     }
 
     if (!generationComplete) {
-      return [{
-        Model: 'Gemini 3.8 Flash TTS',
-        Voice: activeVoice,
-        Text: speechText,
-        Output: outputPath,
-        Size: '-',
-        Status: 'Timeout: Audio generation took longer than ' + maxTimeoutSec + 's.',
-      }];
+      throw new CommandExecutionError(
+        `Timeout: audio generation did not finish within ${maxTimeoutSec}s.`,
+      );
     }
 
-    // 5. Trigger download button from DOM
+    // 7. Trigger the download
     await page.evaluate(`(() => {
+      /* opencli:click-download */
       const downloadBtn = document.querySelector('button.download-button')
-                          || Array.from(document.querySelectorAll('button')).find(b => {
-                               const a = (b.getAttribute('aria-label') || '').toLowerCase();
-                               const t = (b.innerText || '').trim();
-                               return a.includes('download') || t === 'download';
-                             });
-      if (downloadBtn) {
-        downloadBtn.click();
-      }
+        || Array.from(document.querySelectorAll('button')).find((b) => {
+          const a = (b.getAttribute('aria-label') || '').toLowerCase();
+          const t = (b.innerText || '').trim();
+          return a.includes('download') || t === 'download';
+        });
+      if (downloadBtn) downloadBtn.click();
+      return true;
     })()`);
 
-    // 6. Capture the generated audio file from disk (handles .wav and .crdownload automatically)
-    let capturedFile = null;
+    // 8. Capture the NEW file — only once its size has stopped growing
+    let captured = null;
+    let pending = null;
     const downloadPollStart = Date.now();
 
-    while ((Date.now() - downloadPollStart) < 15000) {
-      try {
-        const files = fs.readdirSync(downloadsDir);
-        const candidates = files
-          .filter(f => f.startsWith('Generated Audio') && (f.endsWith('.wav') || f.includes('.wav.crdownload')))
-          .map(f => {
-            const fullPath = path.join(downloadsDir, f);
-            try {
-              const stat = fs.statSync(fullPath);
-              return { file: f, path: fullPath, mtime: stat.mtimeMs, size: stat.size };
-            } catch {
-              return null;
-            }
-          })
-          .filter(c => c && c.mtime >= commandStartTime && c.size > 10000)
-          .sort((a, b) => b.mtime - a.mtime);
-
-        if (candidates.length > 0) {
-          capturedFile = candidates[0];
-          break;
-        }
-      } catch (err) {
-        // Retry
+    while (Date.now() - downloadPollStart < 20000) {
+      await new Promise((r) => setTimeout(r, 800));
+      const fresh = pickNewFile(listAudioEntries(downloadsDir), snapshot);
+      if (!fresh || fresh.size < MIN_AUDIO_BYTES) {
+        pending = null;
+        continue;
       }
-      await new Promise(r => setTimeout(r, 800));
+      if (pending && pending.name === fresh.name && isStableCapture(pending.size, fresh.size, MIN_AUDIO_BYTES)) {
+        captured = fresh;
+        break;
+      }
+      pending = { name: fresh.name, size: fresh.size };
     }
 
-    if (!capturedFile) {
-      // Fallback: check if any recent .crdownload exists
-      return [{
-        Model: 'Gemini 3.8 Flash TTS',
-        Voice: activeVoice,
-        Text: speechText,
-        Output: outputPath,
-        Size: '-',
-        Status: 'Render finished, but download file was not detected in Downloads folder.',
-      }];
+    if (!captured) {
+      throw new CommandExecutionError(
+        'Render finished, but no new audio file appeared in the Downloads folder within 20s.',
+      );
     }
 
-    // 7. Copy captured audio file directly to target outputPath
+    // 9. Copy → verify size AND format → only then remove the source download
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.copyFileSync(capturedFile.path, outputPath);
+    const partPath = outputPath + '.part';
+    fs.copyFileSync(captured.path, partPath);
 
-    // Clean up temporary download file from Downloads
-    try {
-      fs.unlinkSync(capturedFile.path);
-    } catch {
-      // Ignore cleanup error
+    const finalSize = fs.statSync(partPath).size;
+    if (finalSize !== captured.size) {
+      try { fs.unlinkSync(partPath); } catch { /* ignore */ }
+      throw new CommandExecutionError(
+        `Copy verification failed: output ${finalSize} bytes, source ${captured.size} bytes. Source download kept.`,
+      );
     }
 
-    const finalStat = fs.statSync(outputPath);
-    const sizeKB = (finalStat.size / 1024).toFixed(1) + ' KB';
+    // Format gate — this command's whole job is producing a real WAV; an MP3
+    // in disguise (or any container surprise) must fail loudly, not "verify".
+    const head = Buffer.alloc(12);
+    const fd = fs.openSync(partPath, 'r');
+    fs.readSync(fd, head, 0, 12, 0);
+    fs.closeSync(fd);
+    if (head.subarray(0, 4).toString('latin1') !== 'RIFF' || head.subarray(8, 12).toString('latin1') !== 'WAVE') {
+      try { fs.unlinkSync(partPath); } catch { /* ignore */ }
+      throw new CommandExecutionError(
+        `Captured file is not a valid WAV (magic bytes: ${head.subarray(0, 4).toString('hex')}). ` +
+        'Refusing to pass it off as verified output. Source download kept.',
+      );
+    }
 
+    fs.renameSync(partPath, outputPath);
+    try { fs.unlinkSync(captured.path); } catch { /* ignore */ }
+
+    const sizeKB = (finalSize / 1024).toFixed(1) + ' KB';
     return [{
       Model: 'Gemini 3.8 Flash TTS',
       Voice: activeVoice,
       Text: speechText,
       Output: outputPath,
       Size: sizeKB,
-      Status: 'Generated & Auto-Saved Successfully! 🎙️🎉',
+      Status: 'Generated & verified 🎙️',
     }];
   },
 });
