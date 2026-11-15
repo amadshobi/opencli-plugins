@@ -5,7 +5,7 @@
 <h1 align="center">Koleksi Plugin OpenCLI</h1>
 
 <p align="center">
-  Kumpulan plugin siap pakai untuk <b><a href="https://github.com/jackwener/opencli">OpenCLI</a></b> buat ngotomatisasi web apps langsung dari terminal dengan memanfaatkan sesi login browser aktif kalian.
+  Kumpulan plugin OpenCLI untuk menjalankan otomatisasi web langsung dari terminal. Plugin ini memanfaatkan sesi peramban yang aktif. Anda dapat langsung menggunakannya tanpa memerlukan kunci API tambahan.
 </p>
 
 <p align="center">
@@ -27,37 +27,37 @@
 
 ## 📦 Daftar Plugin
 
-| Plugin | Layanan Target | Kemampuan Utama |
+| Plugin | Layanan Sasaran | Fitur Utama |
 | :--- | :--- | :--- |
-| **[`opencli-plugin-aistudio`](./opencli-plugin-aistudio)** | **Google AI Studio** | 🎬 **Gemini Omni 1.2 Flash** Video Gen<br>🎙️ **Gemini 3.8 Flash TTS** Voice Gen (2.000+ suara & ekspresi vocal)<br>🎨 **Nano Banana 2.1** Image Gen<br>💬 Prompting Web Playground langsung<br>✨ **ZERO API Key** (nebeng sesi login browser aktif) |
-| **[`opencli-plugin-telegram`](./opencli-plugin-telegram)** | **Telegram Web** | 📩 Baca & kirim chat, pantau feed channel, interaksi bot button, dan simpan file ke cloud pribadi (*Saved Messages*). |
-| **[`opencli-plugin-whatsapp`](./opencli-plugin-whatsapp)** | **WhatsApp Web** | 💬 Kirim pesan langsung ke nomor HP apa saja (tanpa lib bot tidak resmi / anti ban), pantau obrolan, dan download media. |
+| **[`opencli-plugin-aistudio`](./opencli-plugin-aistudio)** | **Google AI Studio** | 🎬 Pembuatan video **Gemini Omni 1.2 Flash**<br>🎙️ Sintesis suara **Gemini 3.8 Flash TTS** (2.000+ persona suara)<br>🎨 Pembuatan gambar **Nano Banana 2.1**<br>💬 Eksekusi prompt Playground langsung<br>✨ Tanpa kunci API, memanfaatkan sesi peramban aktif |
+| **[`opencli-plugin-telegram`](./opencli-plugin-telegram)** | **Telegram Web** | 📩 Baca dan kirim pesan, pantau umpan saluran, otomatisasi tombol bot, serta pencadangan berkas ke *Saved Messages*. |
+| **[`opencli-plugin-whatsapp`](./opencli-plugin-whatsapp)** | **WhatsApp Web** | 💬 Kirim pesan langsung ke nomor tujuan tanpa pustaka bot tak resmi, pantau percakapan, dan unduh media. |
 
 ---
 
 ## ⚡ Prasyarat
 
-1. **[OpenCLI](https://github.com/jackwener/opencli)** sudah terpasang di komputer:
+1. Pasang paket **[OpenCLI](https://github.com/jackwener/opencli)** pada komputer Anda:
    ```bash
    npm install -g @jackwener/opencli
    ```
-2. **Ekstensi OpenCLI Browser Bridge** sudah dimuat di browser Chromium kalian (Chrome / Edge / Brave).
-3. **OpenCLI Daemon** dalam kondisi aktif:
+2. Pasang ekstensi **OpenCLI Browser Bridge** pada peramban Chromium pilihan Anda, seperti Chrome, Edge, atau Brave.
+3. Pastikan daemon OpenCLI sudah berjalan sebelum Anda mulai:
    ```bash
    opencli daemon restart
    ```
 
 ---
 
-## 🛠️ Cara Pasang (Instalasi)
+## 🛠️ Panduan Pemasangan
 
-Clone repositori ini:
+Klon repositori ini terlebih dahulu ke komputer Anda:
 ```bash
 git clone https://github.com/amadshobi/opencli-plugins.git
 cd opencli-plugins
 ```
 
-Pasang plugin yang kalian mau secara lokal ke OpenCLI:
+Pasang plugin yang Anda perlukan ke lingkungan OpenCLI:
 
 ```bash
 # Pasang plugin Google AI Studio
@@ -70,43 +70,43 @@ opencli plugin install ./opencli-plugin-telegram
 opencli plugin install ./opencli-plugin-whatsapp
 ```
 
-Cek daftar plugin yang sudah terpasang:
+Periksa kembali daftar plugin yang sudah terpasang:
 ```bash
 opencli plugin list
 ```
 
 ---
 
-## 🌟 Sorotan Utama: `opencli aistudio` (Generatif Tanpa Biaya API)
+## 🌟 Sorotan: `opencli aistudio` (Generasi Media Tanpa Kuota API)
 
-Bikin klip video, rekaman suara TTS natural, dan gambar langsung dari terminal tanpa pusing mikirin biaya kuota API:
+Anda dapat membuat video, rekaman suara alami, maupun gambar langsung dari baris perintah. Seluruh proses ini berjalan tanpa memerlukan kuota API berbayar:
 
 ```bash
-# 🎬 Generate klip video pake Gemini Omni 1.2 Flash
-opencli aistudio video "Pemandangan drone cinematic di atas kota cyberpunk neon" --output "./renders/cyberpunk.mp4"
+# 🎬 Buat klip video dengan Gemini Omni 1.2 Flash
+opencli aistudio video "Cinematic drone view over neon cyberpunk city" --output "./renders/cyberpunk.mp4"
 
-# 🎙️ Generate suara ekspresif pake Gemini 3.8 Flash TTS (pake tag emosi)
-opencli aistudio voice "Wah gila... <gasp> beneran bisa jalan tanpa API key? <laugh> Mantap banget!" --voice Enya --output "./suara.wav"
+# 🎙️ Buat rekaman suara emotif dengan Gemini 3.8 Flash TTS
+opencli aistudio voice "Wait... <gasp> did you really build this without an API key? <laugh> Amazing!" --voice Enya --output "./suara.wav"
 
-# 🎨 Generate gambar pake Nano Banana 2.1
-opencli aistudio image "Gadis anime retro lagi baca buku di kereta waktu hujan" --output "./gambar.png"
+# 🎨 Buat gambar dengan Nano Banana 2.1
+opencli aistudio image "Retro anime girl reading book in train during rain" --output "./gambar.png"
 ```
 
 ---
 
-## ❓ Pertanyaan yang Sering Diajukan (FAQ)
+## ❓ Pertanyaan Umum (FAQ)
 
-### *Q: Ini ngejalanin Playwright / Puppeteer headless berat yang bikin RAM jebol ya?*
-**A:** **Sama sekali bukan!** Plugin ini memanfaatkan **OpenCLI Chrome Extension Bridge** yang terhubung langsung ke profil browser harian kalian. Pemakaian RAM-nya hampir 0% tambahan karena cuma mengendalikan tab browser yang sudah ada tanpa memicu blokir anti-bot ataupun CAPTCHA.
+### *Q: Apakah plugin ini menjalankan Playwright atau Puppeteer tanpa kepala (headless)?*
+**A:** Sama sekali tidak. Plugin ini menggunakan OpenCLI Extension Bridge yang tersambung ke profil peramban harian Anda. Beban memori tetap ringan karena memanfaatkan jendela peramban yang sudah ada. Cara ini juga terhindar dari tantangan verifikasi anti-bot maupun CAPTCHA.
 
-### *Q: Harus punya API tier berbayar di Google AI Studio?*
-**A:** **Gak perlu.** Selama akun kalian bisa membuka dan menggunakan [aistudio.google.com](https://aistudio.google.com) di browser, plugin ini langsung mengendalikan tampilan webnya buat merender dan otomatis menyimpan filenya ke harddisk kalian.
+### *Q: Apakah saya harus memiliki paket langganan API berbayar di Google AI Studio?*
+**A:** Tidak perlu. Anda cukup memastikan akun Google Anda sudah masuk ke [aistudio.google.com](https://aistudio.google.com) pada peramban. Plugin ini akan mengarahkan antarmuka web untuk memproses keluaran. Setelah selesai, berkas hasil unduhan akan tersimpan langsung ke komputer Anda.
 
 ---
 
-## 📄 Lisensi & Panduan Proyek
+## 📄 Lisensi dan Panduan Proyek
 
-- **Lisensi**: [MIT](LICENSE) © [Ahmad Shobi](https://github.com/amadshobi)
-- **Catatan Rilis**: Cek [CHANGELOG.md](CHANGELOG.md) untuk riwayat versi.
-- **Kontribusi**: Cek [CONTRIBUTING.md](CONTRIBUTING.md) untuk panduan koding & aturan kontribusi.
-- **Keamanan**: Cek [SECURITY.md](SECURITY.md) untuk pelaporan celah keamanan.
+- **Lisensi**: Proyek ini dilisensikan di bawah [MIT](LICENSE) © [Ahmad Shobi](https://github.com/amadshobi).
+- **Catatan Rilis**: Buka berkas [CHANGELOG.md](CHANGELOG.md) untuk melihat riwayat versi.
+- **Pedoman Kontribusi**: Buka berkas [CONTRIBUTING.md](CONTRIBUTING.md) untuk panduan pengembangan dan pengujian lokal.
+- **Kebijakan Keamanan**: Buka berkas [SECURITY.md](SECURITY.md) untuk tata cara pelaporan celah keamanan.
