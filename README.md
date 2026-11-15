@@ -99,6 +99,9 @@ opencli aistudio image "Retro anime girl reading in a rainy train" --output "./a
 
 ---
 
-## 📄 License
+## 📄 License & Project Health
 
-MIT © [Ahmad Shobi](https://github.com/amadshobi)
+- **License**: [MIT](LICENSE) © [Ahmad Shobi](https://github.com/amadshobi)
+- **Changelog**: See [CHANGELOG.md](CHANGELOG.md) for version release notes.
+- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md) for local dev guide and guidelines.
+- **Security**: See [SECURITY.md](SECURITY.md) for vulnerability reporting.
