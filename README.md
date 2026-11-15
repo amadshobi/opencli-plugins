@@ -32,6 +32,7 @@
 | **[`opencli-plugin-aistudio`](./opencli-plugin-aistudio)** | **Google AI Studio** | 🎬 **Gemini Omni 1.2 Flash** Video Gen<br>🎙️ **Gemini 3.8 Flash TTS** Voice Gen (2,000+ personas, vocal tags)<br>🎨 **Nano Banana 2.1** Image Gen<br>💬 Web Playground Prompt injection<br>✨ **Zero API key required** (uses active browser session) |
 | **[`opencli-plugin-telegram`](./opencli-plugin-telegram)** | **Telegram Web** | 📩 Send & read messages, search chats, manage bots, and save media from Telegram Web. |
 | **[`opencli-plugin-whatsapp`](./opencli-plugin-whatsapp)** | **WhatsApp Web** | 💬 Send text & attachments, query chat lists, and automate WhatsApp Web interactions. |
+| **[`opencli-plugin-gemini`](./opencli-plugin-gemini)** | **Gemini App** | 🎬 **Video generation** from `gemini.google.com` with fail-fast rate-limit detection, download-race protection, and byte-verified output. |
 
 ---
 

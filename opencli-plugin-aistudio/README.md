@@ -32,7 +32,8 @@ opencli aistudio video "Drone shot flying through futuristic cyberpunk canyon" -
 ```
 
 * **Default Output**: `./output.mp4`
-* **Under the Hood**: Uses `Gemini Omni 1.2 Flash`, streams video blob from page memory directly into local buffer to avoid browser `.crdownload` file locking.
+* **Under the Hood**: Uses `Gemini Omni 1.2 Flash`. Marks every `<video>` already on the page before submitting, so only the clip from *this* generation is captured, then streams the blob from page memory in verified chunks — the on-disk file must match the source byte-for-byte (written to `.part`, then renamed) or the command fails loudly.
+* **Fail-Fast**: A rate-limit / quota banner in the UI aborts the command immediately with a non-zero exit code and a parseable `Rate limit` message (with the render's `--timeout`, default `900`s), instead of waiting the full timeout.
 
 ---
 
@@ -56,6 +57,8 @@ opencli aistudio voice "Selamat datang di terminal OpenCLI." --voice Lumi --outp
 * **Default Output**: `./speech.wav`
 * **Voice Personas**: Search and select any of the 2,000+ voices available in AI Studio (`Fola`, `Enya`, `Bodi`, `Lumi`, `Sola`, etc.).
 * **Vocal Tags**: Direct support for inline markup tags (`<laugh>`, `<sigh>`, `<gasp>`, `<chuckles>`, `<whisper>`).
+* **Persona Guard**: The applied speaker is read back from the UI — if the requested persona was not selected, the command fails loudly instead of synthesizing with the wrong voice.
+* **Downloads Note**: The rendered WAV lands in your browser's `Downloads` folder first; the command captures only *new* files, verifies size and RIFF/WAVE format, moves the result to `--output`, and then removes the captured source. Pre-existing downloads are never touched.
 
 ---
 
@@ -96,8 +99,10 @@ opencli aistudio apikey
 
 ## 💾 Auto-Save Mechanism
 
-All media generations (`video`, `voice`, `image`) bypass typical browser download dialogs and `.crdownload` locks by:
+All media generations (`video`, `voice`, `image`) fail loudly instead of reporting false success:
+
 1. Polling for model execution completion via live DOM state.
-2. In-memory fetching of the rendered `blob:` URL inside browser context.
-3. Streaming the binary buffer across the OpenCLI bridge directly into Node.js `fs.writeFileSync`.
-4. Returning verified file paths and byte sizes directly in your CLI output.
+2. Detecting rate-limit / quota / error banners **new since this run** and aborting immediately with a non-zero exit code.
+3. Capturing only artifacts created by *this* run (`data-opencli-seen` markers for page elements, name snapshots for `Downloads`).
+4. Verifying every artifact before it is reported: byte-for-byte parity for video, size + RIFF/WAVE magic for voice — written to a `.part` file first and renamed only after verification.
+5. Cleaning up temporary downloads only after the verified copy exists.
