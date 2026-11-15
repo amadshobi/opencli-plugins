@@ -1,0 +1,40 @@
+name: Plugin Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.plugin }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Plugins that ship a test suite. Add telegram/whatsapp here once
+        # they grow their own vitest suites.
+        plugin:
+          - opencli-plugin-aistudio
+          - opencli-plugin-gemini
+    defaults:
+      run:
+        working-directory: ${{ matrix.plugin }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The repo intentionally does not commit package-lock.json,
+      # so `npm ci` is not available here.
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run tests
+        run: npm test
